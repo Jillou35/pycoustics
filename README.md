@@ -3,6 +3,8 @@
 
 A robust real-time Audio DSP application demonstrating mastery of Python (FastAPI), React, and binary data streaming. Built for performance, testability, and easy deployment.
 
+[![Live Demo](https://img.shields.io/badge/demo-online-green?style=for-the-badge&logo=google-chrome&logoColor=white)](https://zkgcg4sckcc0ks4k44wkg0ws.51.79.67.130.sslip.io)
+
 ## Features
 
 ### 🎧 Real-time Processing
