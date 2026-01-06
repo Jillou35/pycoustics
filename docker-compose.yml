@@ -1,0 +1,35 @@
+services:
+  backend:
+    build: ./backend
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - pycoustics_recordings:/app/recordings_data
+      - pycoustics_db:/app/data
+    environment:
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "${API_URL:-http://localhost:8000}/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+        - API_URL=${API_URL:-http://localhost:8000}
+        - WS_URL=${WS_URL:-ws://localhost:8000}
+    expose:
+      - "80"
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pycoustics_recordings:
+  pycoustics_db:
