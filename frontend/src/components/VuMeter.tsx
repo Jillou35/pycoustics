@@ -38,7 +38,7 @@ export const VuMeter = ({ dbLevel }: VuMeterProps) => {
 
         // Text
         ctx.fillStyle = '#fff';
-        ctx.font = '12px monospace';
+        ctx.font = '20px monospace';
         ctx.fillText(`${dbLevel.toFixed(1)} dB`, 10, height / 2 + 4);
 
     }, [dbLevel]);

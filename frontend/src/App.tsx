@@ -21,12 +21,15 @@ function App() {
     const [gain, setGain] = useState(0.0);
     const [cutoff, setCutoff] = useState(1000);
     const [filterEnabled, setFilterEnabled] = useState(false);
-    const [integrationTime, setIntegrationTime] = useState(0.5);
+    const [integrationTime, setIntegrationTime] = useState(1.0);
     const [recordings, setRecordings] = useState<Recording[]>([]);
     const [started, setStarted] = useState(false);
     const [playingFile, setPlayingFile] = useState<string | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const apiUrl = import.meta.env.VITE_API_URL || `http://localhost:8000`;
+
+    // Tab State for Mobile
+    const [activeTab, setActiveTab] = useState<'live' | 'library'>('live');
 
     // Fetch recordings
     const fetchRecordings = useCallback(async () => {
@@ -102,130 +105,145 @@ function App() {
                     </button>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 350px', gap: '40px', maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+                <>
+                    {/* Transport */}
+                    <div style={{ display: 'flex', gap: '20px' }}>
+                        {!isRecording ? (
+                            <button onClick={startRecording} style={{ maxWidth: '400px', flex: 1, padding: '20px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', margin: '10px auto' }}>
+                                <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }}></div>
+                                Start Recording
+                            </button>
+                        ) : (
+                            <button onClick={stopRecording} style={{ maxWidth: '400px', flex: 1, padding: '20px', background: '#333', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', margin: '10px auto' }}>
+                                <Square size={16} fill="currentColor" />
+                                Stop Recording
+                            </button>
+                        )}
+                    </div>
+                    <div className="tab-nav">
+                        <button
+                            className={`tab-btn ${activeTab === 'live' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('live')}
+                        >
+                            Live Control
+                        </button>
+                        <button
+                            className={`tab-btn ${activeTab === 'library' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('library')}
+                        >
+                            Recordings ({recordings.length})
+                        </button>
+                    </div>
 
-                    {/* Main Control Deck */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="app-grid">
+                        {/* Main Control Deck */}
+                        <div className={activeTab === 'live' ? '' : 'mobile-hidden'} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-                        {/* Visualization */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <VuMeter dbLevel={rms} />
-                            <PanningViewer pan={panning} />
-                            <SpectrumAnalyzer data={spectrum} />
-                        </div>
-
-                        {/* DSP Controls */}
-                        <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '16px', border: '1px solid #333' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                                <Sliders size={20} color="#6366f1" />
-                                <h2 style={{ margin: 0, fontSize: '18px' }}>DSP Parameters</h2>
+                            {/* Visualization */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <VuMeter dbLevel={rms} />
+                                <PanningViewer pan={panning} />
+                                <SpectrumAnalyzer data={spectrum} />
                             </div>
 
-                            <div style={{ display: 'grid', gap: '20px' }}>
-                                {/* Gain */}
-                                <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-                                        <span>Input Gain</span>
-                                        <span style={{ color: '#6366f1' }}>{gain.toFixed(1)} dB</span>
-                                    </div>
-                                    <input
-                                        type="range" min="0" max="60" step="0.1"
-                                        value={gain} onChange={e => setGain(parseFloat(e.target.value))}
-                                        style={{ width: '100%', accentColor: '#6366f1' }}
-                                    />
+                            {/* DSP Controls */}
+                            <div style={{ background: '#1e1e1e', padding: '24px', borderRadius: '16px', border: '1px solid #333' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                    <Sliders size={20} color="#6366f1" />
+                                    <h2 style={{ margin: 0, fontSize: '18px' }}>DSP Parameters</h2>
                                 </div>
 
-                                {/* Integration Time */}
-                                <div style={{ paddingTop: '20px', borderTop: '1px solid #333' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-                                        <span>Integration Time (Seconds)</span>
-                                        <span style={{ color: '#6366f1' }}>{integrationTime.toFixed(2)}s</span>
-                                    </div>
-                                    <input
-                                        type="range" min="0" max="2" step="0.05"
-                                        value={integrationTime} onChange={e => setIntegrationTime(parseFloat(e.target.value))}
-                                        style={{ width: '100%', accentColor: '#6366f1' }}
-                                    />
-                                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                                        Higher values = smoother visualization, but slower
-                                    </div>
-                                </div>
-
-                                {/* Filter */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '20px', borderTop: '1px solid #333' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <span>Low-Pass Filter</span>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                            <input type="checkbox" checked={filterEnabled} onChange={e => setFilterEnabled(e.target.checked)} />
-                                            Enable
-                                        </label>
-                                    </div>
-                                    <div style={{ opacity: filterEnabled ? 1 : 0.5, pointerEvents: filterEnabled ? 'auto' : 'none', transition: 'opacity 0.2s' }}>
+                                <div style={{ display: 'grid', gap: '20px' }}>
+                                    {/* Gain */}
+                                    <div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-                                            <span>Cutoff Frequency</span>
-                                            <span style={{ color: '#6366f1' }}>{cutoff} Hz</span>
+                                            <span>Input Gain</span>
+                                            <span style={{ color: '#6366f1' }}>{gain.toFixed(1)} dB</span>
                                         </div>
                                         <input
-                                            type="range" min="100" max="5000" step="100"
-                                            value={cutoff} onChange={e => setCutoff(parseFloat(e.target.value))}
+                                            type="range" min="0" max="60" step="0.1"
+                                            value={gain} onChange={e => setGain(parseFloat(e.target.value))}
                                             style={{ width: '100%', accentColor: '#6366f1' }}
                                         />
                                     </div>
+
+                                    {/* Integration Time */}
+                                    <div style={{ paddingTop: '20px', borderTop: '1px solid #333' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
+                                            <span>Integration Time (Seconds)</span>
+                                            <span style={{ color: '#6366f1' }}>{integrationTime.toFixed(2)}s</span>
+                                        </div>
+                                        <input
+                                            type="range" min="0" max="2" step="0.05"
+                                            value={integrationTime} onChange={e => setIntegrationTime(parseFloat(e.target.value))}
+                                            style={{ width: '100%', accentColor: '#6366f1' }}
+                                        />
+                                        <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                                            Higher values = smoother visualization, but slower
+                                        </div>
+                                    </div>
+
+                                    {/* Filter */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '20px', borderTop: '1px solid #333' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span>Low-Pass Filter</span>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                                <input type="checkbox" checked={filterEnabled} onChange={e => setFilterEnabled(e.target.checked)} />
+                                                Enable
+                                            </label>
+                                        </div>
+                                        <div style={{ opacity: filterEnabled ? 1 : 0.5, pointerEvents: filterEnabled ? 'auto' : 'none', transition: 'opacity 0.2s' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
+                                                <span>Cutoff Frequency</span>
+                                                <span style={{ color: '#6366f1' }}>{cutoff} Hz</span>
+                                            </div>
+                                            <input
+                                                type="range" min="100" max="5000" step="100"
+                                                value={cutoff} onChange={e => setCutoff(parseFloat(e.target.value))}
+                                                style={{ width: '100%', accentColor: '#6366f1' }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Transport */}
-                        <div style={{ display: 'flex', gap: '20px' }}>
-                            {!isRecording ? (
-                                <button onClick={startRecording} style={{ flex: 1, padding: '20px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                                    <div style={{ width: '12px', height: '12px', background: 'white', borderRadius: '50%' }}></div>
-                                    Start Recording
-                                </button>
-                            ) : (
-                                <button onClick={stopRecording} style={{ flex: 1, padding: '20px', background: '#333', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                                    <Square size={16} fill="currentColor" />
-                                    Stop Recording
-                                </button>
-                            )}
-                        </div>
-                    </div>
+                        {/* Sidebar / Library */}
+                        <div className={activeTab === 'library' ? '' : 'mobile-hidden'} style={{ background: '#1e1e1e', borderRadius: '16px', padding: '20px', height: 'min-content' }}>
+                            <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Save size={18} /> Recent Sessions
+                            </h3>
 
-                    {/* Sidebar / Library */}
-                    <div style={{ background: '#1e1e1e', borderRadius: '16px', padding: '20px', height: 'min-content' }}>
-                        <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Save size={18} /> Recent Sessions
-                        </h3>
+                            <audio ref={audioRef} controls style={{ width: '100%', marginBottom: '15px' }} />
 
-                        <audio ref={audioRef} controls style={{ width: '100%', marginBottom: '15px' }} />
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '500px', overflowY: 'auto' }}>
-                            {recordings.length === 0 && <span style={{ color: '#555', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No recordings yet</span>}
-                            {recordings.map(rec => (
-                                <div key={rec.id} style={{ background: rec.filename === playingFile ? 'rgba(99, 102, 241, 0.2)' : '#27272a', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => playRecording(rec.filename)}>
-                                    <div style={{ overflow: 'hidden' }}>
-                                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{rec.filename}</div>
-                                        <div style={{ fontSize: '11px', color: '#71717a' }}>
-                                            {new Date(rec.timestamp).toLocaleTimeString()} • {rec.duration_seconds.toFixed(1)}s
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '500px', overflowY: 'auto' }}>
+                                {recordings.length === 0 && <span style={{ color: '#555', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No recordings yet</span>}
+                                {recordings.map(rec => (
+                                    <div key={rec.id} style={{ background: rec.filename === playingFile ? 'rgba(99, 102, 241, 0.2)' : '#27272a', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => playRecording(rec.filename)}>
+                                        <div style={{ overflow: 'hidden' }}>
+                                            <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{rec.filename}</div>
+                                            <div style={{ fontSize: '11px', color: '#71717a' }}>
+                                                {new Date(rec.timestamp).toLocaleTimeString()} • {rec.duration_seconds.toFixed(1)}s
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '5px' }}>
+                                            <a href={`${apiUrl}/recordings/${rec.filename}`} download onClick={(e) => e.stopPropagation()} style={{ color: 'inherit', display: 'flex', padding: '4px' }}>
+                                                <Download size={16} />
+                                            </a>
+                                            <button onClick={(e) => deleteRecording(e, rec.filename)} style={{ padding: '4px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                                                <Trash2 size={16} />
+                                            </button>
+                                            <button style={{ padding: '4px', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
+                                                <Play size={16} fill={rec.filename === playingFile ? "currentColor" : "none"} />
+                                            </button>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '5px' }}>
-                                        <a href={`${apiUrl}/recordings/${rec.filename}`} download onClick={(e) => e.stopPropagation()} style={{ color: 'inherit', display: 'flex', padding: '4px' }}>
-                                            <Download size={16} />
-                                        </a>
-                                        <button onClick={(e) => deleteRecording(e, rec.filename)} style={{ padding: '4px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
-                                            <Trash2 size={16} />
-                                        </button>
-                                        <button style={{ padding: '4px', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
-                                            <Play size={16} fill={rec.filename === playingFile ? "currentColor" : "none"} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
 
-                </div>
+                    </div>
+                </>
             )}
         </div>
     );

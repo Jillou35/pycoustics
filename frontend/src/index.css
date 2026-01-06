@@ -57,3 +57,59 @@ button {
   background: var(--text-secondary);
   border-radius: 4px;
 }
+
+/* Desktop Grid Layout */
+.app-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 350px;
+  gap: 40px;
+  width: 100%;
+}
+
+/* Tab Navigation (Mobile only usually) */
+.tab-nav {
+  display: none;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: var(--bg-secondary);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.tab-btn.active {
+  background: var(--accent-color);
+  color: white;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 850px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .app-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .tab-nav {
+    display: flex;
+  }
+
+  /* Hide sections based on active tab */
+  .mobile-hidden {
+    display: none !important;
+  }
+}
