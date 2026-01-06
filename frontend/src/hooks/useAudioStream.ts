@@ -25,13 +25,12 @@ export const useAudioStream = (): AudioStreamHook => {
     const sessionIdRef = useRef<string>(Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
     const socketRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
-    const processorRef = useRef<ScriptProcessorNode | null>(null);
+    const workletNodeRef = useRef<AudioWorkletNode | null>(null);
     const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
     const connectWebSocket = useCallback(() => {
         if (socketRef.current?.readyState === WebSocket.OPEN) return;
-
-        const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8000";
+        const wsUrl = import.meta.env.VITE_WS_URL || `ws://localhost:8000`;
         const ws = new WebSocket(`${wsUrl}/ws/audio?session_id=${sessionIdRef.current}`);
 
         ws.onopen = () => {
@@ -85,39 +84,28 @@ export const useAudioStream = (): AudioStreamHook => {
             audioContextRef.current = new AudioContext({ sampleRate: 44100 });
             sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
 
-            // Use ScriptProcessor for raw PCM access (bufferSize=1024 ~ 23ms latency)
-            // 2 input channels, 2 output channels
-            processorRef.current = audioContextRef.current.createScriptProcessor(1024, 2, 2);
+            // Load the AudioWorklet module
+            try {
+                await audioContextRef.current.audioWorklet.addModule('/audio-processor.js');
+            } catch (e) {
+                console.error("Failed to load audio-processor.js", e);
+                return;
+            }
 
-            processorRef.current.onaudioprocess = (e) => {
+            // Create AudioWorkletNode
+            workletNodeRef.current = new AudioWorkletNode(audioContextRef.current, 'pcm-processor', {
+                outputChannelCount: [2]
+            });
+
+            // Handle messages from the processor (PCM data)
+            workletNodeRef.current.port.onmessage = (event) => {
                 if (socketRef.current?.readyState === WebSocket.OPEN) {
-                    // Get float data
-                    // We need to interleave L and R channels
-                    const inputL = e.inputBuffer.getChannelData(0);
-                    const inputR = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : inputL; // Duplicate if mono source
-
-                    if (inputL.length !== inputR.length) return; // Should not happen
-
-                    const length = inputL.length;
-                    const pcmData = new Int16Array(length * 2);
-
-                    let pcmIndex = 0;
-                    for (let i = 0; i < length; i++) {
-                        // Channel L
-                        let sL = Math.max(-1, Math.min(1, inputL[i]));
-                        pcmData[pcmIndex++] = sL < 0 ? sL * 0x8000 : sL * 0x7FFF;
-
-                        // Channel R
-                        let sR = Math.max(-1, Math.min(1, inputR[i]));
-                        pcmData[pcmIndex++] = sR < 0 ? sR * 0x8000 : sR * 0x7FFF;
-                    }
-
-                    socketRef.current.send(pcmData.buffer);
+                    socketRef.current.send(event.data);
                 }
             };
 
-            sourceRef.current.connect(processorRef.current);
-            processorRef.current.connect(audioContextRef.current.destination); // Needed for Chrome to activate it
+            sourceRef.current.connect(workletNodeRef.current);
+            workletNodeRef.current.connect(audioContextRef.current.destination);
 
         } catch (err) {
             console.error("Error accessing microphone:", err);

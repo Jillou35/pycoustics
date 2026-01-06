@@ -26,11 +26,11 @@ function App() {
     const [started, setStarted] = useState(false);
     const [playingFile, setPlayingFile] = useState<string | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const apiUrl = import.meta.env.VITE_API_URL || `http://localhost:8000`;
 
     // Fetch recordings
     const fetchRecordings = useCallback(async () => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
             const response = await fetch(`${apiUrl}/recordings?session_id=${sessionId}`);
             if (response.ok) {
                 const data = await response.json();
@@ -48,7 +48,6 @@ function App() {
         if (!confirm(`Delete ${filename}?`)) return;
 
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
             const response = await fetch(`${apiUrl}/recordings/${filename}`, { method: 'DELETE' });
             if (response.ok) {
                 fetchRecordings();
@@ -75,7 +74,7 @@ function App() {
 
     const playRecording = (filename: string) => {
         if (audioRef.current) {
-            audioRef.current.src = `http://localhost:8000/recordings/${filename}`;
+            audioRef.current.src = `${apiUrl}/recordings/${filename}`;
             audioRef.current.play();
             setPlayingFile(filename);
         }
@@ -211,7 +210,7 @@ function App() {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '5px' }}>
-                                        <a href={`http://localhost:8000/recordings/${rec.filename}`} download onClick={(e) => e.stopPropagation()} style={{ color: 'inherit', display: 'flex', padding: '4px' }}>
+                                        <a href={`${apiUrl}/recordings/${rec.filename}`} download onClick={(e) => e.stopPropagation()} style={{ color: 'inherit', display: 'flex', padding: '4px' }}>
                                             <Download size={16} />
                                         </a>
                                         <button onClick={(e) => deleteRecording(e, rec.filename)} style={{ padding: '4px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
