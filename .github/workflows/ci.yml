@@ -7,7 +7,7 @@ on:
     branches: [ "main", "master" ]
 
 jobs:
-  test-and-doc:
+  test-and-codecov:
     runs-on: ubuntu-latest
     
     defaults:
