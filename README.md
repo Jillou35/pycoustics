@@ -33,7 +33,8 @@ A robust real-time Audio DSP application demonstrating mastery of Python (FastAP
 - **Environment Config**: Flexible `docker-compose.yml` supporting:
     - Build-time args (`VITE_API_URL`, `VITE_WS_URL`) for frontend.
     - Runtime envs (`FRONTEND_URL`) for backend.
-    - Port configuration for both services in .env file at root directory (`FRONTEND_PORT=3000`, `BACKEND_PORT=8000`)
+    - Port configuration for both services (`FRONTEND_PORT`, `BACKEND_PORT`)
+    - Expose ports for both services (`FRONTEND_EXPOSE_PORT`, `BACKEND_EXPOSE_PORT`)
     - Compatible with **Coolify** and other PaaS via variable substitution.
 
 ### 🛡️ Quality Assurance
@@ -60,6 +61,16 @@ A robust real-time Audio DSP application demonstrating mastery of Python (FastAP
 ### Using Docker (Recommended)
 ```bash
 # 1. Start services
+# Create a .env file with the following content (or change values as needed):
+#
+# BACKEND_PORT=8000
+# BACKEND_EXPOSE_PORT=8000
+# FRONTEND_PORT=3000
+# FRONTEND_EXPOSE_PORT=3000
+# FRONTEND_URL=http://localhost:3000
+# API_URL=http://localhost:8000
+# WS_URL=ws://localhost:8000
+
 docker-compose up --build
 
 # 2. Access
