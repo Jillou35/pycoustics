@@ -81,7 +81,7 @@ export const useAudioStream = (): AudioStreamHook => {
                 }
             });
 
-            audioContextRef.current = new AudioContext({ sampleRate: 44100 });
+            audioContextRef.current = new AudioContext(); // Use default sample rate
             sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
 
             // Load the AudioWorklet module
