@@ -1,17 +1,15 @@
 services:
   backend:
     build: ./backend
-    ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}" # Local config
     expose:
-      - "${BACKEND_EXPOSE_PORT}"
+      - "${BACKEND_PORT:-8000}"
     volumes:
       - pycoustics_recordings:/app/recordings_data
       - pycoustics_db:/app/data
     environment:
-      - FRONTEND_URL=${FRONTEND_URL}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
     healthcheck:
-      test: [ "CMD", "curl", "-f", "${API_URL}/health" ]
+      test: [ "CMD", "curl", "-f", "${API_URL:-http://localhost:8000}/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -20,12 +18,10 @@ services:
     build:
       context: ./frontend
       args:
-        - API_URL=${API_URL}
-        - WS_URL=${WS_URL}
-    ports:
-      - "${FRONTEND_PORT}:80" # Local config
+        - API_URL=${API_URL:-http://localhost:8000}
+        - WS_URL=${WS_URL:-ws://localhost:8000}
     expose:
-      - "${FRONTEND_EXPOSE_PORT}"
+      - "${FRONTEND_PORT:-3000}"
     depends_on:
       - backend
 

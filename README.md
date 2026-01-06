@@ -61,15 +61,14 @@ A robust real-time Audio DSP application demonstrating mastery of Python (FastAP
 ### Using Docker (Recommended)
 ```bash
 # 1. Start services
-# Create a .env file with the following content (or change values as needed):
-#
-# BACKEND_PORT=8000
-# BACKEND_EXPOSE_PORT=8000
-# FRONTEND_PORT=3000
-# FRONTEND_EXPOSE_PORT=3000
-# FRONTEND_URL=http://localhost:3000
-# API_URL=http://localhost:8000
-# WS_URL=ws://localhost:8000
+# Optional: Create a docker-compose.override.yml to map ports locally:
+# services:
+#   backend:
+#     ports:
+#       - "8000:8000"
+#   frontend:
+#     ports:
+#       - "3000:80"
 
 docker-compose up --build
 
@@ -80,8 +79,8 @@ docker-compose up --build
 
 ### Deployment (e.g., Coolify)
 Set these environment variables in your deployment dashboard:
-- **Backend**: `FRONTEND_URL` (e.g., `https://my-app.com`)
-- **Frontend**: `API_URL` (e.g., `https://api.my-app.com`), `WS_URL` (e.g., `wss://api.my-app.com`)
+- **Backend**: `FRONTEND_URL` (e.g., `https://my-app.com`), `BACKEND_PORT` (e.g., `8000`)
+- **Frontend**: `API_URL` (e.g., `https://api.my-app.com`), `WS_URL` (e.g., `wss://api.my-app.com`), `FRONTEND_PORT` (e.g., `3000`)
 
 ### Testing
 Run the backend test suite inside Docker:

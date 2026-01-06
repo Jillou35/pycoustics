@@ -6,3 +6,4 @@ __pycache__
 **/data
 **/recordings_data
 .env
+docker-compose.override.yml
