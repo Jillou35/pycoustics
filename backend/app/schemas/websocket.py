@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class WebSocketCommand(BaseModel):
     action: str
     gain: float = 0.0

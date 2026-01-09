@@ -1,4 +1,3 @@
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -25,11 +24,12 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 @pytest.fixture(scope="function")
 def test_db():
     # Create tables
     Base.metadata.create_all(bind=engine)
-    
+
     # Create session
     db = TestingSessionLocal()
     try:
@@ -39,6 +39,7 @@ def test_db():
         # Drop tables after test
         Base.metadata.drop_all(bind=engine)
 
+
 @pytest.fixture(scope="function")
 def client(test_db):
     # Override the dependency
@@ -47,14 +48,15 @@ def client(test_db):
             yield test_db
         finally:
             pass
-            
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with TestClient(app) as c:
         yield c
-    
+
     # Reset overrides
     app.dependency_overrides.clear()
+
 
 @pytest.fixture(scope="function", autouse=True)
 def mock_recordings_dir(tmp_path):
@@ -64,20 +66,20 @@ def mock_recordings_dir(tmp_path):
     # Create the temp dir
     (tmp_path / "recordings_data").mkdir(exist_ok=True)
     temp_dir = tmp_path / "recordings_data"
-    
+
     # We need to patch it in:
     # 1. app.services.recorder
     # 2. app.api.endpoints
-    
+
     from unittest.mock import patch
-    
-    p1 = patch('app.services.recorder.RECORDINGS_DIR', temp_dir)
-    p2 = patch('app.api.endpoints.RECORDINGS_DIR', temp_dir)
-    
+
+    p1 = patch("app.services.recorder.RECORDINGS_DIR", temp_dir)
+    p2 = patch("app.api.endpoints.RECORDINGS_DIR", temp_dir)
+
     p1.start()
     p2.start()
-    
+
     yield temp_dir
-    
+
     p1.stop()
     p2.stop()
